@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.LockModeType;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 import java.sql.Connection;
@@ -130,12 +131,58 @@ public class ConnectionDestinationTest {
         assertThat(mycol, is("master"));
     }
 
+    @Test
+    public void jpqlSelectWithPessimisticWriteUsesMaster() {
+        em.getTransaction().begin();
+
+        final String mycol = jpqlSelect(LockModeType.PESSIMISTIC_WRITE);
+
+        em.getTransaction().commit();
+        assertThat(mycol, is("master"));
+    }
+
+    @Test
+    public void jpqlSelectWithPessimisticReadUsesMaster() {
+        em.getTransaction().begin();
+
+        final String mycol = jpqlSelect(LockModeType.PESSIMISTIC_READ);
+
+        em.getTransaction().commit();
+        assertThat(mycol, is("master"));
+    }
+
+    @Test
+    public void findWithPessimisticWriteUsesMaster() {
+        final String id = "master";
+        em.getTransaction().begin();
+
+        final String mycol = em.find(MyTable.class, id, LockModeType.PESSIMISTIC_WRITE).getMycol();
+
+        em.getTransaction().commit();
+        assertThat(mycol, is(id));
+    }
+
+    @Test
+    public void findWithPessimisticReadUsesMaster() {
+        final String id = "master";
+        em.getTransaction().begin();
+
+        final String mycol = em.find(MyTable.class, id, LockModeType.PESSIMISTIC_READ).getMycol();
+
+        em.getTransaction().commit();
+        assertThat(mycol, is(id));
+    }
+
     private String nativeSelect() {
         return (String) em.createNativeQuery("select mycol from mytable").getSingleResult();
     }
 
     private String jpqlSelect() {
-        final TypedQuery<MyTable> query = em.createQuery("select m from MyTable m", MyTable.class);
+        return jpqlSelect(LockModeType.NONE);
+    }
+
+    private String jpqlSelect(final LockModeType lockModeType) {
+        final TypedQuery<MyTable> query = em.createQuery("select m from MyTable m", MyTable.class).setLockMode(lockModeType);
         final MyTable result = query.getSingleResult();
         return result.getMycol();
     }
