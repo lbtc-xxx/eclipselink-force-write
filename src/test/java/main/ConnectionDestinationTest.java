@@ -20,7 +20,7 @@ import java.util.Arrays;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
-public class ConnectionDestinationTest2 {
+public class ConnectionDestinationTest {
     static EntityManagerFactory emf = null;
     EntityManager em;
 
